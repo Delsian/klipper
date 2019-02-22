@@ -1,0 +1,18 @@
+# Kconfig settings for STM32F0 processors
+
+if MACH_STM32F0
+
+config STM32F0_SELECT
+    bool
+    default y
+    select HAVE_GPIO
+
+config BOARD_DIRECTORY
+    string
+    default "stm32f0"
+    
+config CLOCK_FREQ
+    int
+    default 48000000
+
+endif

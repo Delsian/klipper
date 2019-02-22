@@ -49,6 +49,7 @@ MCU_PINS = {
     "samd21g": port_pins(2, 32),
     "samd51g19": port_pins(2, 32), "samd51j19": port_pins(3, 32),
     "samd51n19": port_pins(3, 32), "samd51p20": port_pins(4, 32),
+    "stm32f042": port_pins(2),
     "stm32f103": port_pins(5, 16),
     "lpc176x": lpc_pins(),
     "pru": beaglebone_pins(),

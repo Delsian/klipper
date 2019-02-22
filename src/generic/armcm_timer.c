@@ -42,7 +42,11 @@ timer_set_diff(uint32_t value)
 uint32_t
 timer_read_time(void)
 {
-    return DWT->CYCCNT;
+#if (__CORTEX_M > 0)
+	return DWT->CYCCNT;
+#else
+    return 0; // For Cortex-M0
+#endif
 }
 
 // Activate timer dispatch as soon as possible
@@ -57,11 +61,12 @@ timer_kick(void)
 void
 timer_init(void)
 {
+#if (__CORTEX_M > 0)
     // Enable Debug Watchpoint and Trace (DWT) for its 32bit timer
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     DWT->CYCCNT = 0;
-
+#endif
     // Enable SysTick
     irqstatus_t flag = irq_save();
     NVIC_SetPriority(SysTick_IRQn, 2);
