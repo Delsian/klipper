@@ -87,7 +87,7 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* h) {
 			uint8_t short_uuid[SHORT_UUID_LEN];
 			PackUuid(short_uuid);
 			if (memcmp(&(h->pRxMsg->Data[2]), short_uuid, SHORT_UUID_LEN) == 0) {
-				MyCanId = *((uint16_t*)h->pRxMsg->Data);
+				memcpy(&MyCanId, h->pRxMsg->Data, sizeof(uint16_t));
 				CAN_FilterConfTypeDef sFilterConfig;
 				sFilterConfig.FilterNumber = 0;
 				sFilterConfig.FilterMode = CAN_FILTERMODE_IDLIST;

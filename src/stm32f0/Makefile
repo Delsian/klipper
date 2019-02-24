@@ -1,4 +1,4 @@
-# Additional STM32F1 build rules
+# Additional STM32F0 build rules
 
 # Setup the toolchain
 CROSS_PREFIX=arm-none-eabi-

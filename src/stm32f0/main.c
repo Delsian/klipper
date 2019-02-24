@@ -11,6 +11,7 @@
 #include "command.h" // DECL_CONSTANT
 #include "board/misc.h" // timer_read_time
 #include "sched.h" // sched_main
+#include "internal.h"
 #include "can.h"
 
 DECL_CONSTANT(MCU, "stm32f042");
@@ -89,12 +90,29 @@ udelay(uint32_t usecs)
         ;
 }
 
+static void rtc_init(void)
+{
+	RTC_HandleTypeDef hrtc;
+	hrtc.Instance = RTC;
+	hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+	hrtc.Init.AsynchPrediv = 127;
+	hrtc.Init.SynchPrediv = 255;
+	hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+	HAL_RTC_Init(&hrtc);
+}
+
 // Main entry point
 int
 main(void)
 {
+	HAL_Init();
+
     clock_config();
+    gpio_init();
     CanInit();
+    rtc_init();
     sched_main();
     return 0;
 }
