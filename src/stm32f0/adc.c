@@ -6,29 +6,37 @@
  *
  */
 
+#include <stdbool.h> // bool
 #include "board/gpio.h" // gpio_adc_setup
+#include "board/io.h" // readb
 #include "stm32f0xx_hal.h"
 #include "internal.h" // GPIO
 #include "compiler.h" // ARRAY_SIZE
 #include "command.h" // shutdown
 #include "sched.h" // sched_shutdown
 
+DECL_CONSTANT(ADC_MAX, 4095);
+
 #define ADC_DELAY (240 * 8)
+static bool adc_busy;
+static uint8_t adc_current_channel;
 ADC_HandleTypeDef hadc;
 
 static const uint8_t adc_pins[] = {
     GPIO('A', 0), GPIO('A', 1),
-#if (CONFIG_CANSERIAL)
+#if !(CONFIG_SERIAL)
     GPIO('A', 2), GPIO('A', 3),
 #endif
     GPIO('A', 4), GPIO('A', 5), GPIO('A', 6), GPIO('A', 7),
-    GPIO('B', 1)
+    GPIO('B', 1),
+    // Fake ADC on this GPIO (returns tempsensor value)
+    GPIO('B', 8)
 };
 
 static const uint32_t adc_channels[] = {
     ADC_CHANNEL_0,
     ADC_CHANNEL_1,
-#if (CONFIG_CANSERIAL)
+#if !(CONFIG_SERIAL)
     ADC_CHANNEL_2,
     ADC_CHANNEL_3,
 #endif
@@ -37,7 +45,8 @@ static const uint32_t adc_channels[] = {
     ADC_CHANNEL_6,
     ADC_CHANNEL_7,
     ADC_CHANNEL_9,
-
+    // For tests
+    ADC_CHANNEL_TEMPSENSOR
 };
 
 struct gpio_adc
@@ -65,8 +74,9 @@ gpio_adc_setup(uint8_t pin)
     /**Configure for the selected ADC regular channel to be converted.
     */
     sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-    sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+    sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
     HAL_ADC_ConfigChannel(&hadc, &sConfig);
+    HAL_ADCEx_Calibration_Start(&hadc);
     return (struct gpio_adc){ .pin = adc_channels[chan] };
 }
 
@@ -76,7 +86,18 @@ gpio_adc_setup(uint8_t pin)
 uint32_t
 gpio_adc_sample(struct gpio_adc g)
 {
-
+    /* ADC not busy, start conversion */
+    if (!readb(&adc_busy)) {
+        HAL_ADC_Start(&hadc);
+        adc_busy = true;
+        adc_current_channel = g.pin;
+        return ADC_DELAY;
+    /* ADC finished conversion for this channel */
+    } else if (HAL_ADC_PollForConversion(&hadc, 100) == HAL_OK) {
+        __HAL_ADC_CLEAR_FLAG(&hadc, ADC_FLAG_EOS);
+        adc_busy = false;
+        return 0;
+    }
     /* Wants to sample another channel, or not finished yet */
     return ADC_DELAY;
 }
@@ -85,14 +106,17 @@ gpio_adc_sample(struct gpio_adc g)
 uint16_t
 gpio_adc_read(struct gpio_adc g)
 {
-    return 0;
+    return HAL_ADC_GetValue(&hadc);
 }
 
 // Cancel a sample that may have been started with gpio_adc_sample()
 void
 gpio_adc_cancel_sample(struct gpio_adc g)
 {
-
+    if (readb(&adc_busy) && readl(&adc_current_channel) == g.pin) {
+        adc_busy = false;
+        HAL_ADC_Stop(&hadc);
+    }
 }
 
 /**
@@ -118,7 +142,7 @@ void AdcInit(void)
     hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
     hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     hadc.Init.DMAContinuousRequests = DISABLE;
-    hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+    hadc.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
     HAL_ADC_Init(&hadc);
 }
 DECL_INIT(AdcInit);
