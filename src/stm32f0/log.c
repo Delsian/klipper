@@ -30,19 +30,14 @@ void LogInit(void)
 
 void lprint(char *msg)
 {
-#if (CONFIG_DEBUG_OUT)
     HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), 100);
-#endif
 }
 
 void lnprint(char *msg, size_t len)
 {
-#if (CONFIG_DEBUG_OUT)
     HAL_UART_Transmit(&huart2, (uint8_t *)msg, len, 100);
-#endif
 }
 
-#if (CONFIG_DEBUG_OUT)
 /**
 * @brief UART MSP Initialization
 * @param huart: UART handle pointer
@@ -69,4 +64,3 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   }
 }
-#endif
