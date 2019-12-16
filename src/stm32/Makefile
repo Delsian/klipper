@@ -15,7 +15,7 @@ CFLAGS-$(CONFIG_MACH_STM32F0) += -mcpu=cortex-m0 -Ilib/stm32f0/include
 CFLAGS-$(CONFIG_MACH_STM32F1) += -mcpu=cortex-m3 -Ilib/stm32f1/include
 CFLAGS-$(CONFIG_MACH_STM32F4) += -mcpu=cortex-m4 -Ilib/stm32f4/include
 CFLAGS-$(CONFIG_MACH_STM32F4) += -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-CFLAGS += $(CFLAGS-y) -D$(MCU_UPPER) -mthumb -Ilib/cmsis-core
+CFLAGS += $(CFLAGS-y) -D$(MCU_UPPER) -mthumb -Ilib/cmsis-core -O0 -g2
 
 CFLAGS_klipper.elf += --specs=nano.specs --specs=nosys.specs
 CFLAGS_klipper.elf += -T $(OUT)src/generic/armcm_link.ld
@@ -41,6 +41,8 @@ src-$(CONFIG_USBSERIAL) += $(usb-src-y) stm32/chipid.c generic/usb_cdc.c
 serial-src-y := stm32/serial.c
 serial-src-$(CONFIG_MACH_STM32F0) := stm32/stm32f0_serial.c
 src-$(CONFIG_SERIAL) += $(serial-src-y) generic/serial_irq.c
+can-src-$(CONFIG_MACH_STM32F0) := stm32/stm32f0_can.c
+src-$(CONFIG_CANSERIAL) += $(can-src-y) generic/serial_irq.c
 
 # Binary output file rules
 target-y += $(OUT)klipper.bin
